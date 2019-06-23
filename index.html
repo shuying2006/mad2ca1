@@ -1,0 +1,800 @@
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="jquery.mobile-1.4.5.css">
+  <script src="jquery-1.11.3.min.js"></script>
+  <script src="jquery.mobile-1.4.5.js"></script>
+
+  <!--Google fonts-->
+  <link href='https://fonts.googleapis.com/css?family=Alegreya Sans SC' rel='stylesheet'>
+  <link href='https://fonts.googleapis.com/css?family=Oxygen Mono' rel='stylesheet'>
+
+  <!-- connect to maps api-->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7WSubQpGGiFM9fQFdRSDyOGwGix5pKgg&callback=initMap"></script>
+
+
+
+  <script>
+    $(document).on("pagecreate", "#pageone", function () {
+      console.log('first page, countdown page created');
+    });
+
+    $(document).on("pagecreate", "#pagetwo", function () {
+      console.log('second page, about the country page created');
+
+      $('#btngettime').on('tap', function () {
+        var timezone = $('#timezone').val();
+        getTime(timezone);
+      })
+
+      $('#btngetholiday').on('tap', function () {
+        var hol = $('#holiday').val();
+        var yrs = $('#yr').val();
+        getHoliday(hol, yrs);
+      })
+
+      $('#btngetcurr').on('tap', function () {
+        var from = $('#fromCount').val();
+        var to = $('#toCount').val();
+        var amount = $('#amt').val();
+        getCurrency(from, to, amount);
+      })
+
+    });
+
+    $(document).on("pagecreate", "#pagethree", function () {
+      console.log('third page, map page created');
+    });
+
+    $(document).on("pagecreate", "#pagefour", function () {
+      console.log('fourth page, getting around Changi Airport created');
+      populateList();
+
+      // add an event to handle list taps 
+      $('#changiList li').on('tap', function () {
+
+        var index = $(this).index() //refers to object being tapped
+        globalIndex = index; // store the index in a global var
+        console.log('list item was tapped' + " " + index);
+        // programatically changes the page 
+        $(":mobile-pagecontainer").pagecontainer("change", "#pagesix", { role: "page" });
+      })
+    });
+
+    $(document).on("pagecreate", "#pagefive", function () {
+      console.log('fifth page, about us page created');
+    });
+
+
+
+
+
+    // get date from input value
+    function myFunction() {
+      var x = document.getElementById("myDate").value;
+      var y = Date.parse(x);
+      var countDownDate = new Date(y).getTime();
+      console.log(countDownDate);
+
+      var x = setInterval(function () {
+
+        // get today's date and time 
+        var now = new Date().getTime();
+
+        // find the difference between now and date counting down to 
+        var diff = countDownDate - now;
+
+        //time calculations for days, hours, mins, sec
+        var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        document.getElementById("demo").innerHTML = "Number of days to your trip: <br>" + days + "d " + hours + "h "
+          + minutes + "m " + seconds + "s ";
+
+        // If the count down is over, write some text 
+        if (diff < 0) {
+          clearInterval(x);
+          document.getElementById("demo").innerHTML = alert("DATE HAS EXPIRED!");
+        }
+      }, 1000);
+
+    }
+
+
+    //function get timezone of city
+    function getTime(timezone) {
+      console.log("country " + timezone);
+      var url = "http://api.timezonedb.com/v2.1/get-time-zone?key=4HEN1ZZ3IFZV&format=json&by=zone&zone=" + timezone;
+      $.getJSON(url, function (obj) {
+        console.log('get JSON timezone');
+        console.log(JSON.stringify(obj));
+        var countryNam = obj.countryName;
+        var timendat = obj.formatted;
+        $('#result1').html("Country Name: " + countryNam + "<br> Date and Time: " + timendat);
+      })
+    }
+
+    // function get holiday
+    function getHoliday(hol, yrs) {
+      var x = "";
+      console.log('get holiday ' + hol);
+      console.log('get holiday year ' + yrs);
+      var url = "https://calendarific.com/api/v2/holidays?&api_key=691df8bfb4baa4e1a6a52e497fd5e78a8f4e4578&country=" + hol + "&year=" + yrs + "&type=local";
+      $.getJSON(url, function (obj) {
+        console.log('get JSON holiday');
+        console.log(JSON.stringify(obj));
+        for (i in obj.response.holidays) {
+
+          x += "<h2>" + obj.response.holidays[i].name + "</h2>";
+          for (j in obj.response.holidays[i].date.iso) {
+            x += obj.response.holidays[i].date.iso[j];
+          }
+        }
+        $('#result2').html("Local holidays: " + x);
+      })
+    }
+
+    // function get currency conversion rate
+    function getCurrency(from, to, amount) {
+      console.log(from, to);
+      var url = "https://free.currconv.com/api/v7/convert?q=" + from + "_" + to + "&compact=ultra&apiKey=11267d4935abb699de5d";
+      $.getJSON(url, function (obj) {
+        console.log(' get JSON currency rate');
+        console.log(Object.values(obj));
+        var x = Object.values(obj);
+        var result = x * amount;
+        var res = result.toFixed(2);
+        $('#result3').html(amount + " " + from + " is equivalent to " + res + " " + to + ".");
+      })
+    }
+
+
+    // function google map/ geolocation 
+    function initMap() {
+      // map options
+      var options = {
+        zoom: 13.5,
+        center: { lat: 1.345010, lng: 103.983208 }
+      }
+      // new map
+      var map = new google.maps.Map(document.getElementById('map'), options);
+
+      // array of markers
+      var markers = [
+        {
+          coords: { lat: 1.359167, lng: 103.989441 },
+          iconImage: 'icons/terminal1.png',
+          content: '<h3>Terminal 1 </h3>'
+        },
+        {
+          coords: { lat: 1.3554, lng: 103.9892 },
+          iconImage: 'icons/terminal1.png',
+          content: '<h3>Terminal 2 </h3>'
+        },
+        {
+          coords: { lat: 1.3563, lng: 103.9865 },
+          iconImage: 'icons/terminal1.png',
+          content: '<h3>Terminal 3 </h3>'
+        },
+        {
+          coords: { lat: 1.3384, lng: 103.9837 },
+          iconImage: 'icons/terminal1.png',
+          content: '<h3>Terminal 4 </h3>'
+        },
+        {
+          coords: { lat: 1.3596, lng: 103.9895 },
+          iconImage: 'icons/terminal1.png',
+          content: '<h3>Jewel</h3>'
+        }];
+
+      // loop through markers
+      for (var i = 0; i < markers.length; i++) {
+        // add marker
+        addMarker(markers[i]);
+      }
+
+
+      // add marker function
+      function addMarker(props) {
+        var marker = new google.maps.Marker({
+          position: props.coords,
+          map: map,
+
+
+        });
+        // check for icon
+        if (props.iconImage) {
+          marker.setIcon(props.iconImage);
+        }
+        // check for content
+        if (props.content) {
+          var infoWindow = new google.maps.InfoWindow({
+            content: props.content,
+          });
+
+          marker.addListener('click', function () {
+            infoWindow.open(map, marker);
+          })
+        }
+      }
+    }
+
+
+
+    //page 4 : create a global variable array
+    var arr =
+      [{
+        mainName: 'Terminal 1',
+        date: '29 December 1981',
+        imgSmall: 'term1.jpg',
+
+        name1: "Arrival Garden",
+        imgBig1: 'term1AG.jpg',
+        description1: "Step into a 'dragonfly habitat', filled with lush and natural greenery",
+
+        name2: "Cactus Garden",
+        imgBig2: 'term1CG.jpg',
+        description2: "Discover the serene qualities of the world's most enduring plants",
+
+        name3: "Kinetic Rain",
+        imgBig3: 'term1KR.jpg',
+        description3: 'Marvel at the intricate formations of over 1000 copper raindrops',
+
+        name4: "Piazza Garden",
+        imgBig4: 'term1PG.jpg',
+        description4: "Admire plant displays celebrating Singapore's multicultural society",
+
+
+      },
+      {
+        mainName: 'Terminal 2',
+        date: '22 November 1990',
+        imgSmall: 'term2.jpg',
+
+        name1: "Enchanted Garden",
+        imgBig1: 'term2EG.png',
+        description1: 'Take a restful stroll among blooming flowers and magical pathways',
+
+        name2: "Sunflower Garden",
+        imgBig2: 'term2SF.jpg',
+        description2: 'Bask in the sun and admire cheery sunflowers at this rooftop haven',
+
+        name3: "Orchid Garden",
+        imgBig3: 'term2OG.jpg',
+        description3: 'Brighten up your journey with over 7000 vibrant orchid flowers',
+
+        name4: "A million times at changi",
+        imgBig4: 'term2AMTAC.jpg',
+        description4: 'Admire the beauty of synchronised movement in this kinetic artwork',
+      },
+
+      {
+        mainName: 'Terminal 3',
+        date: '29 December 1981',
+        imgSmall: 'term3.jpg',
+
+        name1: "Butterfly Garden",
+        imgBig1: 'term3BG.jpg',
+        description1: 'Get up close with over 1000 butterflies in their tropical habitat',
+
+        name2: "Crystal Garden",
+        imgBig2: 'term3CG.jpg',
+        description2: '12 dandelion glass scruptures bring the beauty of nature indoor',
+
+        name3: "The Slide",
+        imgBig3: 'term3TS.jpg',
+        description3: 'Take a breathtaking ride on the world tallest slide in an airport',
+
+        name4: "Birds in Flight",
+        imgBig4: 'term3BIF.jpg',
+        description4: 'A unique sculture symbolising hope, freedom and infinite quest',
+
+      },
+
+      {
+        mainName: 'Terminal 4',
+        date: '31 October 2017',
+        imgSmall: 'term4.jpg',
+
+        name1: "Heritage Zone",
+        imgBig1: 'term4PZ.jpg',
+        description1: 'Visit a bygone era at this colorful showcase of Peranakan shophouses',
+
+        name2: "Peranakan Gallery",
+        imgBig2: 'term4PG.jpg',
+        description2: "Discover the culture and craft of Singapore's Peranakan community",
+
+        name3: "Steel in Bloom",
+        imgBig3: 'term4SIB.jpg',
+        description3: "Take a walk among beautiful flora, both natural and man-made",
+
+        name4: "Petal Clouds",
+        imgBig4: 'term4PC.jpg',
+        description4: "Be moved by the seamless unity of art, music and science",
+      },
+      {
+        mainName: 'Jewel Changi Airport',
+        date: '17 April 2019',
+        imgSmall: 'jewel.png',
+
+        name1: "Canopy Bridge",
+        imgBig1: 'jewelCB.jpg',
+        description1: "Take a walk through the air with the canopy bridge",
+
+        name2: "Discovery Slide",
+        imgBig2: 'term4DS.jpg',
+        description2: "Singapore's first large scale interactive sculture for all ages",
+
+        name3: "Shiseido Forest Valley",
+        imgBig3: 'jewelSFV.jpg',
+        description3: "A lush green sanctuary and tranquil retreat in the heart of Jewel",
+
+        name4: "Petal Garden",
+        imgBig4: 'jewelPG',
+        description4: "The winsome charm of a garden in bloom",
+      }
+      ];
+
+    // declare global variable so that it is visible to function
+    var globalIndex = 0;
+
+    //function to populate changi list
+    function populateList() {
+      console.log("populate changi list");
+      var s = "";
+      $.each(arr, function (index, val) {
+        var title = arr[index].mainName;
+        var img = arr[index].imgSmall;
+        var date = arr[index].date;
+        s = s + "<li><a href = '#'><img src = img/" + img + "><h3>" + title + "</h3><p>" + date + "</p></a></li>";
+      })
+      $('#changiList').html(s);
+      // refresh the list to reapply the css
+      $('#changiList').listview('refresh');
+    }
+
+
+
+    $(document).on("pagebeforeshow", '#pagesix', function () {
+      var img1 = arr[globalIndex].imgBig1;
+      var title1 = arr[globalIndex].name1;
+      var desc1 = arr[globalIndex].description1;
+      $('#imgBig1').attr("src", "img/" + img1);
+      $('#title1').html(title1);
+      $('#description1').html(desc1);
+
+      var img2 = arr[globalIndex].imgBig2;
+      var title2 = arr[globalIndex].name2;
+      var desc2 = arr[globalIndex].description2;
+      $('#imgBig2').attr("src", "img/" + img2);
+      $('#title2').html(title2);
+      $('#description2').html(desc2);
+
+      var img3 = arr[globalIndex].imgBig3;
+      var title3 = arr[globalIndex].name3;
+      var desc3 = arr[globalIndex].description3;
+      $('#imgBig3').attr("src", "img/" + img3);
+      $('#title3').html(title3);
+      $('#description3').html(desc3);
+
+      var img4 = arr[globalIndex].imgBig4;
+      var title4 = arr[globalIndex].name4;
+      var desc4 = arr[globalIndex].description4;
+      $('#imgBig4').attr("src", "img/" + img4);
+      $('#title4').html(title4);
+      $('#description4').html(desc4);
+
+    })
+
+    // scroll back to top button
+    window.onscroll = function () { scrollFunction() };
+
+    function scrollFunction() {
+      if (document.body.scrollTop > 250 || document.documentElement.scrollTop > 250) {
+        document.getElementById("myBtn").style.display = "block";
+      } else {
+        document.getElementById("myBtn").style.display = "none";
+      }
+    }
+
+    // When the user clicks on the button, scroll to the top of the document
+    function topFunction() {
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
+
+  </script>
+
+</head>
+
+<body>
+
+  <div data-role="page" id="pageone">
+    <div data-role="panel" id="myPanel">
+      <h3>Countdown</h3>
+      <h3 class='pan'>
+        <a href="#pagetwo">About the country</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagethree">Maps</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefour">Getting around Singapore Changi Airport</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefive">About Us</h3>
+      </a>
+    </div>
+
+    <div data-role="header">
+      <a href="#myPanel" class="ui-btn ui-btn-inline">Menu</a>
+      <h1>Plan Your Travel</h1>
+    </div>
+
+    <div data-role="main" class="ui-content">
+      <p id="tit">Countdown</p>
+      <h4>Key in date of travel:</h4>
+      <input type="date" id="myDate" value="2019-12-01">
+      <button onclick="myFunction()">Get Countdown</button>
+      <p id="demo"></p>
+    </div>
+
+  </div>
+
+  <div data-role="page" id="pagetwo">
+    <div data-role="panel" id="myPanel">
+      <h3 class='pan'>
+        <a href="#pageone">Countdown</a>
+      </h3>
+      <h3>About the country</h3>
+      <h3 class='pan'>
+        <a href="#pagethree">Maps</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefour">Getting around Singapore Changi Airport</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefive">About Us</h3>
+      </a>
+    </div>
+
+    <div data-role="header">
+      <a href="#myPanel" class="ui-btn ui-btn-inline">Menu</a>
+      <h1>Plan Your Travel</h1>
+    </div>
+
+    <div data-role="main" class="ui-content">
+      <p id="tit"> About the country </p>
+
+      <h4> Time Zone</h4>
+      <label for="timezone">Enter Continent and City</label>
+      <input type="text" id="timezone" placeholder="Continent & City e.g. Asia/Tokyo">
+      <button id="btngettime">Get time zone</button>
+      <div id='result1'></div>
+
+      <br>
+      <h4>Holidays</h4>
+      <label for "holiday">Enter City</label>
+      <input type="text" id="holiday" placeholder="Enter Country Code e.g. US">
+      <label for="yr">Enter Year: </label>
+      <input type="number" id="yr" name="yr" min="2000" max="2030" placeholder="Enter between year 2000-2030">
+      <button id="btngetholiday">Get holiday</button>
+      <div id='result2'></div>
+
+      <br>
+      <h4>Currency Conversion</h4>
+      <label for "fromCount">From: </label>
+      <input type="text" id="fromCount" placeholder="Enter Country Code e.g. US">
+      <label for="toCount">To: </label>
+      <input type="text" id="toCount" placeholder="Enter Country Code e.g. US">
+      <label for="amt">Amount: </label>
+      <input type="number" id="amt" placeholder="Enter Amount">
+      <button id="btngetcurr">Get Currency Conversion</button>
+      <div id='result3'></div>
+
+    </div>
+
+  </div>
+
+  <div data-role="page" id="pagethree">
+    <div data-role="panel" id="myPanel">
+      <h3 class='pan'>
+        <a href="#pageone">Countdown</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagetwo">About the Country</h3>
+      </a>
+      <h3>Maps</h3>
+      <h3 class='pan'>
+        <a href="#pagefour">Getting around Singapore Changi Airport</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefive">About Us</h3>
+      </a>
+    </div>
+
+    <div data-role="header">
+      <a href="#myPanel" class="ui-btn ui-btn-inline">Menu</a>
+      <h1>Plan Your Travel</h1>
+    </div>
+
+    <div data-role="main" class="ui-content">
+      <p id="tit">Overview Map of Singapore Changi Airport</p>
+      <div id="map"></div>
+    </div>
+
+  </div>
+
+  <div data-role="page" id="pagefour">
+    <div data-role="panel" id="myPanel">
+      <h3 class='pan'>
+        <a href="#pageone">Countdown</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagetwo">About the Country</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagethree">Maps</h3>
+      </a>
+      <h3>Getting around Singapore Changi Airport</h3>
+      <h3 class='pan'>
+        <a href="#pagefive">About Us</h3>
+      </a>
+    </div>
+
+    <div data-role="header">
+      <a href="#myPanel" class="ui-btn ui-btn-inline">Menu</a>
+      <h1>Plan Your Travel</h1>
+    </div>
+
+    <div data-role="main" class="ui-content">
+      <p id="tit"> Singapore Changi Airport </p>
+      <p id='attractions'>Top 4 things to do at each terminal</p>
+      <ul id="changiList" data-role="listview"></ul>
+    </div>
+
+
+
+  </div>
+
+  <div data-role="page" id="pagefive">
+    <div data-role="panel" id="myPanel">
+      <h3 class='pan'>
+        <a href="#pageone">Countdown</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagetwo">About the Country</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagethree">Maps</h3>
+      </a>
+      <h3 class='pan'>
+        <a href="#pagefour">Getting around Singapore Changi Airport</h3>
+      </a>
+      <h3>About Us</h3>
+    </div>
+
+    <div data-role="header">
+      <a href="#myPanel" class="ui-btn ui-btn-inline">Menu</a>
+      <h1>Plan Your Travel</h1>
+    </div>
+
+    <div data-role="main" class="ui-content">
+      <p id="tit"> About Us </p>
+      <h5>-- Our Mission -- </h5>
+      <p id="abt">To provide convenience for travellers.</p>
+      <img id="abtus" src="img/abtus.jpg">
+    </div>
+
+  </div>
+
+  </div>
+
+  <!-- page 6 : details page-->
+  <div data-role="page" id="pagesix">
+    <div data-role="header">
+      <a href="#" class="ui-btn ui-icon-carat-l ui-btn-icon-left 
+      ui-nodisc-icon ui-btn-icon-notext 
+      ui-alt-icon" data-rel="back">Without circle</a>
+
+      <h1>Details Page</h1>
+    </div>
+
+    <div class="container">
+      <div data-role="main" class="ui-content">
+        <img id="imgBig1" class="center"></img>
+        <h3 id='title1' class="text"></h3>
+        <p id='description1' class="text"></p>
+
+        <img id="imgBig2" class="center"></img>
+        <h3 id='title2' class="text"></h3>
+        <p id='description2' class="text"></p>
+
+        <img id="imgBig3" class="center"></img>
+        <h3 id='title3' class="text"></h3>
+        <p id='description3' class="text"></p>
+
+        <img id="imgBig4" class="center"></img>
+        <h3 id='title4' class="text"></h3>
+        <p id='description4' class="text"></p>
+
+      </div>
+
+      <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+    </div>
+
+
+
+</body>
+</html>
+
+<style>
+  h1 {
+    font-family: 'Oxygen Mono';
+    font-size: 15px;
+  }
+
+  #demo {
+    text-align: center;
+    font-size: 25px;
+    margin-top: 20px;
+  }
+
+  p#tit {
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 22px;
+    color: #545454;
+    text-decoration: underline;
+    font-family: 'Alegreya Sans SC';
+  }
+
+  p {
+    text-align: center;
+  }
+
+  h3 {
+    text-align: center;
+    text-decoration: none;
+    color: black;
+  }
+
+  h3.pan {
+    text-align: left;
+  }
+
+  h2 {
+    text-align: center;
+    text-decoration: underline;
+  }
+
+  h4 {
+    text-align: center;
+    text-decoration: underline;
+  }
+
+  h5 {
+    text-align: center;
+    font-size: 1em;
+  }
+
+  .ui-content {
+    background-color: #B9D3EE;
+    /*background:url(img/backg.jpg); */
+    background-attachment: fixed;
+    position: relative;
+    max-width: auto;
+    margin: auto;
+    font-family: 'Alegreya Sans SC';
+  }
+
+  .ui-panel-inner {
+    /*background:url(img/bgg.jpg); */
+    background-color: #FFFAF1;
+    font-family: 'Alegreya Sans SC';
+    font-size: 17px;
+
+  }
+
+  .ui-page-theme-a a:visited,
+  html .ui-bar-a a:visited,
+  html .ui-body-a a:visited,
+  html body .ui-group-theme-a a:visited {
+    color: #2a2a2a;
+  }
+
+  .ui-page-theme-a a,
+  html .ui-bar-a a,
+  html .ui-body-a a,
+  html body .ui-group-theme-a a {
+    text-decoration: none;
+    font-weight: 500;
+    color: #2a2a2a/*{a-link-color}*/
+    ;
+  }
+
+  #map {
+    height: 400px;
+    width: 100%;
+  }
+
+  /*center the image */
+  .center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+    height: auto;
+  }
+
+  /*center the text */
+  .text {
+    text-align: center;
+  }
+
+  #description1,
+  #description2,
+  #description3,
+  #description4 {
+    margin-top: -0.6em;
+    margin-bottom: 2.5em;
+  }
+
+  #title {
+    text-align: left;
+  }
+
+  img {
+    padding: 0.5em 0.2em 0.2em 0.5em;
+    height: 80%;
+  }
+
+  #attractions {
+    margin-top: -0.6em;
+    padding: 0 0 1.5em 0;
+    color: black;
+    font-size: 16.5px;
+  }
+
+  #myBtn {
+    width: 50px;
+    height: 50px;
+    border: solid 1px #000;
+    border-radius: 50%;
+    display: none;
+    position: fixed;
+    bottom: 5px;
+    right: 20px;
+    z-index: 99;
+    font-size: 11px;
+    border: none;
+    outline: none;
+    background-color: lightgray;
+    color: black;
+    cursor: pointer;
+    padding: 15px;
+  }
+
+  #myBtn:hover {
+    background-color: black;
+  }
+
+  p#abt {
+    text-align: center;
+    font-size: 0.8em;
+  }
+
+  img#abtus {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: auto;
+    padding: 0em;
+  }
+
+</style>
